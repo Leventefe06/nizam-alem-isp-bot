@@ -5,4 +5,4 @@ services:
     plan: free
     rootDir: veriler
     buildCommand: npm install
-    startCommand: node cano.js
+    startCommand: node bot.js
