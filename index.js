@@ -1,8 +1,8 @@
 const express = require("express");
 const { Client, GatewayIntentBits, PermissionsBitField } = require("discord.js");
 const fs = require("fs");
-require("dotenv").config();
 const ms = require("ms");
+require("dotenv").config();
 
 const client = new Client({
   intents: [
@@ -27,16 +27,22 @@ client.on("messageCreate", async (message) => {
 
   if (komut === ".ayet") {
     const rastgele = ayetler[Math.floor(Math.random() * ayetler.length)];
-    message.channel.send(`📖 **Ayet:** ${rastgele}`);
-  } else if (komut === ".hadis") {
+    return message.channel.send(`📖 **Ayet:** ${rastgele}`);
+  }
+
+  if (komut === ".hadis") {
     const rastgele = hadisler[Math.floor(Math.random() * hadisler.length)];
-    message.channel.send(`🕋 **Hadis:** ${rastgele}`);
-  } else if (komut === ".dua") {
+    return message.channel.send(`🕋 **Hadis:** ${rastgele}`);
+  }
+
+  if (komut === ".dua") {
     const rastgele = dualar[Math.floor(Math.random() * dualar.length)];
-    message.channel.send(`🤲 **Dua:** ${rastgele}`);
-  } else if (komut.startsWith(".zamanasimi")) {
+    return message.channel.send(`🤲 **Dua:** ${rastgele}`);
+  }
+
+  if (komut.startsWith(".zamanasimi")) {
     if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) {
-      return message.reply("Bu komutu kullanmak için yetkin yok.");
+      return message.reply("⛔ Bu komutu kullanmak için yetkiniz yok.");
     }
 
     const args = message.content.split(" ");
@@ -49,23 +55,43 @@ client.on("messageCreate", async (message) => {
     }
 
     const milisaniye = ms(sure);
+
     if (!milisaniye || milisaniye < 5000 || milisaniye > 28 * 24 * 60 * 60 * 1000) {
       return message.reply("⛔ Süre geçersiz. En az 5 saniye, en fazla 28 gün olabilir.");
     }
 
     try {
       await hedef.timeout(milisaniye, sebep);
-      message.reply(`✅ ${hedef.user.tag} adlı kullanıcı ${sure} süreyle zaman aşımına alındı. Sebep: ${sebep}`);
+      return message.reply(`✅ ${hedef.user.tag} adlı kullanıcı ${sure} süreyle zaman aşımına alındı. Sebep: ${sebep}`);
     } catch (err) {
       console.error(err);
-      message.reply("⛔ Zaman aşımı verilemedi. Yetkim yetmiyor olabilir.");
+      return message.reply("⛔ Zaman aşımı verilemedi. Yetkim yetmiyor olabilir veya botun rolü kullanıcıdan üstte olmayabilir.");
+    }
+  }
+
+  // Zaman aşımı iptal komutu
+  if (komut.startsWith(".zamanasimiiptal")) {
+    if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) {
+      return message.reply("⛔ Bu komutu kullanmak için yetkiniz yok.");
+    }
+
+    const hedef = message.mentions.members.first();
+    if (!hedef) {
+      return message.reply("Kullanım: `.zamanasimiiptal @kullanıcı`");
+    }
+
+    try {
+      await hedef.timeout(null);
+      return message.reply(`✅ ${hedef.user.tag} adlı kullanıcının zaman aşımı kaldırıldı.`);
+    } catch (err) {
+      console.error(err);
+      return message.reply("⛔ Zaman aşımı kaldırılamadı. Yetkim yetmiyor olabilir veya botun rolü kullanıcıdan üstte olmayabilir.");
     }
   }
 });
 
-// Express app başlat
+// Express app başlat (Uptime için)
 const app = express();
-
 app.get("/", (req, res) => {
   res.send("Bot çalışıyor! 🕌");
 });
