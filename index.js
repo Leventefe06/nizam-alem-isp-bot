@@ -1,65 +1,55 @@
 const express = require("express");
-const { Client, GatewayIntentBits } = require("discord.js");
+const { Client, GatewayIntentBits, ActivityType, Status } = require("discord.js");
 const { joinVoiceChannel } = require("@discordjs/voice");
 const fs = require("fs");
+const ms = require("ms");
 require("dotenv").config();
-const ms = require("ms"); // süre çevirici
 
+// Bot istemcisi
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates, // Ses durumu için gerekli
-  ],
+    GatewayIntentBits.GuildVoiceStates
+  ]
 });
 
-// Verileri yükle
+// JSON verileri
 const ayetler = JSON.parse(fs.readFileSync("./veriler/ayetler.json", "utf8"));
 const hadisler = JSON.parse(fs.readFileSync("./veriler/hadisler.json", "utf8"));
 const dualar = JSON.parse(fs.readFileSync("./veriler/dualar.json", "utf8"));
 
-// Bot hazır olunca:
-client.once("ready", async () => {
+// Bot hazır olduğunda
+client.once("ready", () => {
   console.log(`🕌 Nizam-ı Âlem Isparta botu giriş yaptı: ${client.user.tag}`);
 
-  // Durumu "Rahatsız Etmeyin" yap
+  // Botun durumunu ayarla
   client.user.setPresence({
-    status: "dnd",
-    activities: [{ name: "Nizam-ı Âlem Isparta", type: 0 }],
+    status: "dnd", // Rahatsız Etmeyin
+    activities: [{ name: "İlahi Nizamı", type: ActivityType.Listening }]
   });
 
-  // Sunucuyu ve ses kanalını bul
-  const guild = client.guilds.cache.first();
-  if (!guild) {
-    console.error("Bot herhangi bir sunucuya bağlı değil.");
-    return;
-  }
+  // Ses kanalına otomatik katıl
+  const guild = client.guilds.cache.get("1290220178579390464"); // Sunucu ID
+  const kanal = guild?.channels.cache.get("1373607881575759902"); // Ses kanalı ID
 
-  // Ses kanalını ismine göre bul
-  const channel = guild.channels.cache.find(
-    (c) => c.type === 2 && c.name === "Nizam-ı Âlem Isparta"
-  );
-  if (!channel) {
-    console.error("Ses kanalı bulunamadı.");
-    return;
-  }
-
-  // Ses kanalına bağlan
-  try {
+  if (kanal && kanal.type === 2) {
     joinVoiceChannel({
-      channelId: channel.id,
+      channelId: kanal.id,
       guildId: guild.id,
-      adapterCreator: guild.voiceAdapterCreator,
+      adapterCreator: kanal.guild.voiceAdapterCreator,
+      selfDeaf: false,
+      selfMute: false
     });
-    console.log("Ses kanalına bağlanıldı.");
-  } catch (error) {
-    console.error("Ses kanalına bağlanırken hata:", error);
+    console.log("🔊 Bot ses kanalına katıldı.");
+  } else {
+    console.log("❌ Ses kanalı bulunamadı veya türü ses kanalı değil.");
   }
 });
 
 // Mesaj komutları
-client.on("messageCreate", (message) => {
+client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
   const komut = message.content.toLowerCase();
@@ -78,47 +68,64 @@ client.on("messageCreate", (message) => {
     const rastgele = dualar[Math.floor(Math.random() * dualar.length)];
     message.channel.send(`🤲 **Dua:** ${rastgele}`);
   }
+
+  if (komut.startsWith(".zamanasimi")) {
+    if (!message.member.permissions.has("ModerateMembers")) {
+      return message.reply("⛔ Bu komutu kullanmak için 'Üyeleri Zaman Aşımına Uğrat' yetkisine sahip olmalısın.");
+    }
+
+    const args = message.content.split(" ");
+    const hedef = message.mentions.members.first();
+    const sure = args[2];
+    const sebep = args.slice(3).join(" ") || "Sebep belirtilmedi";
+
+    if (!hedef || !sure) {
+      return message.reply("Kullanım: `.zamanasimi @kullanıcı 10m Sebep`");
+    }
+
+    const milisaniye = ms(sure);
+    if (!milisaniye || milisaniye < 5000 || milisaniye > 28 * 24 * 60 * 60 * 1000) {
+      return message.reply("⛔ Süre geçersiz. En az 5 saniye, en fazla 28 gün olabilir.");
+    }
+
+    try {
+      await hedef.timeout(milisaniye, sebep);
+      message.reply(`✅ ${hedef.user.tag} adlı kullanıcı ${sure} süreyle zaman aşımına alındı. Sebep: ${sebep}`);
+    } catch (err) {
+      console.error(err);
+      message.reply("⛔ Zaman aşımı verilemedi. Yetkim yetmiyor olabilir.");
+    }
+  }
+
+  if (komut.startsWith(".iptal")) {
+    if (!message.member.permissions.has("ModerateMembers")) {
+      return message.reply("⛔ Bu komutu kullanmak için yetkin yok.");
+    }
+
+    const hedef = message.mentions.members.first();
+    if (!hedef || !hedef.isCommunicationDisabled()) {
+      return message.reply("⛔ Zaman aşımında olan bir kullanıcı etiketlemelisin.");
+    }
+
+    try {
+      await hedef.timeout(null);
+      message.reply(`✅ ${hedef.user.tag} adlı kullanıcının zaman aşımı kaldırıldı.`);
+    } catch (err) {
+      console.error(err);
+      message.reply("⛔ Zaman aşımı kaldırılamadı. Yetkim yetmiyor olabilir.");
+    }
+  }
 });
 
-// .zamanasimi komutu
-client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
-  if (!message.content.startsWith(".zamanasimi")) return;
-  if (!message.member.permissions.has("ModerateMembers")) return;
-
-  const args = message.content.split(" ");
-  const hedef = message.mentions.members.first();
-  const sure = args[2];
-  const sebep = args.slice(3).join(" ") || "Sebep belirtilmedi";
-
-  if (!hedef || !sure) {
-    return message.reply("Kullanım: `.zamanasimi @kullanıcı 10m Sebep`");
-  }
-
-  const milisaniye = ms(sure);
-  if (!milisaniye || milisaniye < 5000 || milisaniye > 28 * 24 * 60 * 60 * 1000) {
-    return message.reply("⛔ Süre geçersiz. En az 5 saniye, en fazla 28 gün olabilir.");
-  }
-
-  try {
-    await hedef.timeout(milisaniye, sebep);
-    message.reply(`✅ ${hedef.user.tag} adlı kullanıcı ${sure} süreyle zaman aşımına alındı. Sebep: ${sebep}`);
-  } catch (err) {
-    console.error(err);
-    message.reply("⛔ Zaman aşımı verilemedi. Yetkim yetmiyor olabilir.");
-  }
-});
-
-// Express app başlat
+// Express keep-alive
 const app = express();
-
 app.get("/", (req, res) => {
   res.send("Bot çalışıyor! 🕌");
 });
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Sunucu ${PORT} portunda çalışıyor.`);
+  console.log(`🌐 Keep-alive portu: ${PORT}`);
 });
 
+// Giriş
 client.login(process.env.TOKEN);
