@@ -119,3 +119,4 @@ app.listen(PORT, () => {
 });
 
 client.login(process.env.TOKEN);
+>>>>>>> 27f1cfb (Tam sürüm yüklendi)
