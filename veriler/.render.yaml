@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: nizam-alem-isp-bot
+    env: node
+    plan: free
+    rootDir: veriler
+    buildCommand: npm install
+    startCommand: node bot.js
