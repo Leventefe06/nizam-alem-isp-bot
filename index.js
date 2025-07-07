@@ -1,5 +1,6 @@
 const { Client, GatewayIntentBits } = require("discord.js");
 const fs = require("fs");
+const express = require("express");  // express'i ekledik
 require("dotenv").config();
 
 const client = new Client({
@@ -13,6 +14,19 @@ const client = new Client({
 const ayetler = JSON.parse(fs.readFileSync("./veriler/ayetler.json", "utf8"));
 const hadisler = JSON.parse(fs.readFileSync("./veriler/hadisler.json", "utf8"));
 const dualar = JSON.parse(fs.readFileSync("./veriler/dualar.json", "utf8"));
+
+// Express app başlat
+const app = express();
+
+app.get("/", (req, res) => {
+  res.send("Bot çalışıyor! 🕌");
+});
+
+// Render'ın verdiği PORT'u kullan, yoksa 3000
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Sunucu ${PORT} portunda çalışıyor.`);
+});
 
 client.once("ready", () => {
   console.log(`🕌 Nizam-ı Âlem Isparta botu giriş yaptı: ${client.user.tag}`);
