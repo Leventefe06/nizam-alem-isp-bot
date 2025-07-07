@@ -52,5 +52,34 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Sunucu ${PORT} portunda çalışıyor.`);
 });
+const ms = require("ms"); // süre çevirici kütüphane
+
+client.on("messageCreate", async (message) => {
+  if (message.author.bot) return;
+  if (!message.content.startsWith(".zamanasimi")) return;
+  if (!message.member.permissions.has("ModerateMembers")) return;
+
+  const args = message.content.split(" ");
+  const hedef = message.mentions.members.first();
+  const sure = args[2];
+  const sebep = args.slice(3).join(" ") || "Sebep belirtilmedi";
+
+  if (!hedef || !sure) {
+    return message.reply("Kullanım: `.zamanasimi @kullanıcı 10m Sebep`");
+  }
+
+  const milisaniye = ms(sure);
+  if (!milisaniye || milisaniye < 5000 || milisaniye > 28 * 24 * 60 * 60 * 1000) {
+    return message.reply("⛔ Süre geçersiz. En az 5 saniye, en fazla 28 gün olabilir.");
+  }
+
+  try {
+    await hedef.timeout(milisaniye, sebep);
+    message.reply(`✅ ${hedef.user.tag} adlı kullanıcı ${sure} süreyle zaman aşımına alındı. Sebep: ${sebep}`);
+  } catch (err) {
+    console.error(err);
+    message.reply("⛔ Zaman aşımı verilemedi. Yetkim yetmiyor olabilir.");
+  }
+});
 
 client.login(process.env.TOKEN);
