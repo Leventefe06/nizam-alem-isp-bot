@@ -64,48 +64,51 @@ client.on("messageCreate", async (message) => {
     message.channel.send(`🤲 **Dua:** ${rastgele}`);
   }
 
-  // .zamanasimi komutu
-  if (komut.startsWith(".zamanasimi")) {
-    if (!message.member.permissions.has("ModerateMembers")) return;
+// .zamanasimi komutu
+if (komut.startsWith(".zamanasimi")) {
+  const rolKontrol = message.member.roles.cache.some(role => role.name === "Yetkili Kadrosu");
+  if (!rolKontrol) return message.reply("⛔ Bu komutu sadece 'Yetkili Kadrosu' rolüne sahip olanlar kullanabilir.");
 
-    const args = komut.split(" ");
-    const hedef = message.mentions.members.first();
-    const sure = args[2];
-    const sebep = args.slice(3).join(" ") || "Sebep belirtilmedi";
+  const args = komut.split(" ");
+  const hedef = message.mentions.members.first();
+  const sure = args[2];
+  const sebep = args.slice(3).join(" ") || "Sebep belirtilmedi";
 
-    if (!hedef || !sure) {
-      return message.reply("Kullanım: `.zamanasimi @kullanıcı 10m Sebep`");
-    }
-
-    const milisaniye = ms(sure);
-    if (!milisaniye || milisaniye < 5000 || milisaniye > 28 * 24 * 60 * 60 * 1000) {
-      return message.reply("⛔ Süre geçersiz. En az 5 saniye, en fazla 28 gün olabilir.");
-    }
-
-    try {
-      await hedef.timeout(milisaniye, sebep);
-      message.reply(`✅ ${hedef.user.tag} adlı kullanıcı ${sure} süreyle zaman aşımına alındı. Sebep: ${sebep}`);
-    } catch (err) {
-      console.error(err);
-      message.reply("⛔ Zaman aşımı verilemedi. Yetkim yetmiyor olabilir.");
-    }
+  if (!hedef || !sure) {
+    return message.reply("Kullanım: `.zamanasimi @kullanıcı 10m Sebep`");
   }
 
-  // .iptal komutu
-  if (komut.startsWith(".iptal")) {
-    if (!message.member.permissions.has("ModerateMembers")) return;
-
-    const hedef = message.mentions.members.first();
-    if (!hedef) return message.reply("Kullanım: `.iptal @kullanıcı`");
-
-    try {
-      await hedef.timeout(null); // zaman aşımını kaldır
-      message.reply(`✅ ${hedef.user.tag} için zaman aşımı kaldırıldı.`);
-    } catch (err) {
-      console.error(err);
-      message.reply("⛔ İşlem başarısız. Yetkim yeterli olmayabilir.");
-    }
+  const milisaniye = ms(sure);
+  if (!milisaniye || milisaniye < 5000 || milisaniye > 28 * 24 * 60 * 60 * 1000) {
+    return message.reply("⛔ Süre geçersiz. En az 5 saniye, en fazla 28 gün olabilir.");
   }
+
+  try {
+    await hedef.timeout(milisaniye, sebep);
+    message.reply(`✅ ${hedef.user.tag} adlı kullanıcı ${sure} süreyle zaman aşımına alındı. Sebep: ${sebep}`);
+  } catch (err) {
+    console.error(err);
+    message.reply("⛔ Zaman aşımı verilemedi. Yetkim yetmiyor olabilir.");
+  }
+}
+
+// .iptal komutu
+if (komut.startsWith(".iptal")) {
+  const rolKontrol = message.member.roles.cache.some(role => role.name === "Yetkili Kadrosu");
+  if (!rolKontrol) return message.reply("⛔ Bu komutu sadece 'Yetkili Kadrosu' rolüne sahip olanlar kullanabilir.");
+
+  const hedef = message.mentions.members.first();
+  if (!hedef) return message.reply("Kullanım: `.iptal @kullanıcı`");
+
+  try {
+    await hedef.timeout(null);
+    message.reply(`✅ ${hedef.user.tag} için zaman aşımı kaldırıldı.`);
+  } catch (err) {
+    console.error(err);
+    message.reply("⛔ İşlem başarısız. Yetkim yeterli olmayabilir.");
+  }
+}
+
 });
 
 // Express keep-alive
@@ -119,4 +122,3 @@ app.listen(PORT, () => {
 });
 
 client.login(process.env.TOKEN);
->>>>>>> 27f1cfb (Tam sürüm yüklendi)
