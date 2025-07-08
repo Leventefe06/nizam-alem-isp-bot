@@ -44,8 +44,6 @@ client.once("ready", () => {
   // }
 });
 
-});
-
 // Yeni gelen üyeye otomatik rol ve DM gönderme
 client.on("guildMemberAdd", async (member) => {
   const kayitsizRolId = "1382828727796498472"; // Kayıtsız rol ID
