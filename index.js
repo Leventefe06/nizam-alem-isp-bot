@@ -120,5 +120,37 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🌐 Keep-alive portu: ${PORT}`);
 });
+client.on("guildMemberAdd", async (member) => {
+  const kayitsizRolId = "1382828727796498472"; // ← BURAYA kayıtsız rolünün ID'sini yaz
+  const kayitKanalId = "1297643650703954000"; // ← Bu senin kayıt kanalının ID’si
+
+  try {
+    // Kayıtsız rolünü ver
+    await member.roles.add(kayitsizRolId);
+
+    // DM mesajı gönder
+    try {
+      await member.send(`🌙 Selamün Aleyküm kardeşim,
+
+Nizam-ı Âlem Isparta sunucusuna hoş geldin!
+
+Kayıt olmak için lütfen sunucudaki #kayıt-kanalı’na ismini ve yaşını yaz.
+
+Allah (c.c) senden razı olsun. 🤍`);
+    } catch (dmErr) {
+      console.log("❌ DM gönderilemedi. Kullanıcının DM’leri kapalı olabilir.");
+    }
+
+    // Sunucudaki kayıt kanalına mesaj gönder
+    const kanal = member.guild.channels.cache.get(kayitKanalId);
+    if (kanal && kanal.isTextBased()) {
+      kanal.send(`👋 Hoş geldin ${member}! İsmini ve yaşını yazar mısın?`);
+    }
+
+    console.log(`✅ ${member.user.tag} adlı kullanıcıya kayıtsız rolü verildi ve hoş geldin mesajı atıldı.`);
+  } catch (err) {
+    console.error("❌ Yeni gelen üyeye işlem yapılırken hata oluştu:", err);
+  }
+});
 
 client.login(process.env.TOKEN);
