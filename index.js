@@ -95,40 +95,41 @@ client.on("messageCreate", async (message) => {
     message.channel.send(`🤲 **Dua:** ${rastgele}`);
   }
 
-  // Kayıt komutları
-  if (komut === ".e" || komut === ".k") {
-    if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu")) {
-      return message.reply("⛔ Bu komutu sadece Yetkili Kadrosu rolüne sahip kişiler kullanabilir.");
-    }
-    const hedef = message.mentions.members.first();
-    if (!hedef) return message.reply("Lütfen kayıt yapılacak üyeyi etiketleyin.");
-    const isim = args[2];
-    const yas = args[3];
-    if (!isim || !yas) return message.reply("Lütfen isim ve yaş bilgisini girin. Örnek: `.e @üye Efe 17`");
-
-    const kayitsizRolId = "1382828727796498472";
-    const kayitliRolId = "1291025465577967657";
-    const beyefendiRolId = "1297646920830943292";
-    const hanimefendiRolId = "1297646174848942101";
-
-    try {
-      await hedef.roles.remove(kayitsizRolId);
-      await hedef.roles.add(kayitliRolId);
-
-      if (komut === ".e") {
-        await hedef.roles.add(beyefendiRolId);
-      } else {
-        await hedef.roles.add(hanimefendiRolId);
-      }
-
-      await hedef.setNickname(`${isim} | ${yas}`);
-
-      message.channel.send(`✅ ${hedef} başarıyla kayıt edildi.`);
-    } catch (err) {
-      console.error(err);
-      message.reply("Kayıt sırasında bir hata oluştu.");
-    }
+ // Kayıt komutları
+if (komut === ".e" || komut === ".k") {
+  if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu")) {
+    return message.reply("⛔ Bu komutu sadece Yetkili Kadrosu rolüne sahip kişiler kullanabilir.");
   }
+  const hedef = message.mentions.members.first();
+  if (!hedef) return message.reply("Lütfen kayıt yapılacak üyeyi etiketleyin.");
+  const isim = args[2];
+  const yas = args[3];
+  if (!isim || !yas) return message.reply("Lütfen isim ve yaş bilgisini girin. Örnek: `.e @üye Efe 17`");
+
+  const kayitsizRolId = "1382828727796498472";
+  const kayitliRolId = "1291025465577967657";
+  const beyefendiRolId = "1297646920830943292";
+  const hanimefendiRolId = "1297646174848942101";
+
+  try {
+    await hedef.roles.remove(kayitsizRolId);
+    await hedef.roles.add(kayitliRolId);
+
+    if (komut === ".e") {
+      await hedef.roles.add(beyefendiRolId);
+    } else {
+      await hedef.roles.add(hanimefendiRolId);
+    }
+
+    // Nickname başına hilal koy
+    await hedef.setNickname(`☪ ${isim} | ${yas}`);
+
+    message.channel.send(`✅ ${hedef} başarıyla kayıt edildi.`);
+  } catch (err) {
+    console.error(err);
+    message.reply("Kayıt sırasında bir hata oluştu.");
+  }
+}
 
   // Zaman aşımı komutları
   if (komut === ".zamanasimi") {
