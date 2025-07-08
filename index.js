@@ -28,20 +28,22 @@ client.once("ready", () => {
     activities: [{ name: "Nizam-ı Âlem Isparta", type: 0 }]
   });
 
-  // Ses kanalına katılma
-  const guild = client.guilds.cache.get("1290220178579390464"); // Sunucu ID
-  const kanalID = "1373607881575759902"; // Ses kanalı ID
-  if (guild) {
-    const kanal = guild.channels.cache.get(kanalID);
-    if (kanal && kanal.isVoiceBased()) {
-      joinVoiceChannel({
-        channelId: kanal.id,
-        guildId: guild.id,
-        adapterCreator: guild.voiceAdapterCreator
-      });
-      console.log("🔊 Ses kanalına katıldı.");
-    }
-  }
+  // Render ortamında ses kanalına katılma kodu devre dışı bırakıldı
+  // const guild = client.guilds.cache.get("1290220178579390464"); 
+  // const kanalID = "1373607881575759902"; 
+  // if (guild) {
+  //   const kanal = guild.channels.cache.get(kanalID);
+  //   if (kanal && kanal.isVoiceBased()) {
+  //     joinVoiceChannel({
+  //       channelId: kanal.id,
+  //       guildId: guild.id,
+  //       adapterCreator: guild.voiceAdapterCreator
+  //     });
+  //     console.log("🔊 Ses kanalına katıldı.");
+  //   }
+  // }
+});
+
 });
 
 // Yeni gelen üyeye otomatik rol ve DM gönderme
