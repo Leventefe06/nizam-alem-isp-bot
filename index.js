@@ -92,6 +92,39 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   const args = message.content.trim().split(/ +/);
   const komut = args[0].toLowerCase();
+  
+// Üyelere açık komutlar
+  if (komut === ".sunucu") {
+    const owner = await message.guild.fetchOwner();
+    message.channel.send(`👑 Sunucu Sahibi: ${owner.user.tag}`);
+  }
+
+  if (komut === ".katıldım") {
+    const tarih = `<t:${Math.floor(message.member.joinedTimestamp / 1000)}:R>`;
+    message.channel.send(`📅 Sunucuya katılma tarihin: ${tarih}`);
+  }
+
+  if (komut === ".profilim") {
+    const user = message.author;
+    const hesapTarihi = `<t:${Math.floor(user.createdTimestamp / 1000)}:F>`;
+    message.channel.send(`🧾 **Profil Bilgileri**
+- Kullanıcı: ${user.tag}
+- ID: ${user.id}
+- Hesap Oluşturulma: ${hesapTarihi}`);
+  }
+
+  if (komut === ".sunucubilgi") {
+    const sunucu = message.guild;
+    const kurulus = `<t:${Math.floor(sunucu.createdTimestamp / 1000)}:F>`;
+    message.channel.send(`📊 **Sunucu Bilgisi**
+- Ad: ${sunucu.name}
+- Üye Sayısı: ${sunucu.memberCount}
+- Kuruluş: ${kurulus}`);
+  }
+
+  if (komut === ".kurallar") {
+    message.channel.send("📌 Sunucu kurallarını şu kanalda bulabilirsin: <#1353793603050274867>");
+  }
 
   // Ayet, Hadis, Dua
   if (komut === ".ayet") {
