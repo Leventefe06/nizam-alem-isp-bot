@@ -92,7 +92,40 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   const args = message.content.trim().split(/ +/);
   const komut = args[0].toLowerCase();
-  
+if (komut === ".help") {
+  const { EmbedBuilder } = require("discord.js");
+
+  const embed = new EmbedBuilder()
+    .setColor("#4B0082")
+    .setTitle("📘 Komut Yardım Menüsü")
+    .setDescription("Aşağıda bot komutlarını kategorilere ayrılmış şekilde bulabilirsin.")
+    .addFields(
+      {
+        name: "👤 Üye Komutları",
+        value:
+          "`📖 .ayet` → Rastgele bir ayet gönderir.\n" +
+          "`🕋 .hadis` → Rastgele bir hadis gönderir.\n" +
+          "`🤲 .dua` → Rastgele bir dua gönderir.\n" +
+          "`👑 .sunucu` → Sunucu sahibini gösterir.\n" +
+          "`📅 .katıldım` → Ne zaman katıldığını gösterir.\n" +
+          "`🧾 .profilim` → Hesap bilgilerini gösterir.\n" +
+          "`📊 .sunucubilgi` → Sunucu hakkında bilgi verir.\n" +
+          "`📌 .kurallar` → Kurallar kanalını gösterir.",
+      },
+      {
+        name: "🛠️ Yetkili Komutları",
+        value:
+          "`✅ .e @üye İsim Yaş` → Erkek kullanıcıyı kayıt eder.\n" +
+          "`✅ .k @üye İsim Yaş` → Kadın kullanıcıyı kayıt eder.\n" +
+          "`⏰ .zamanasimi @üye 10m Sebep` → Zaman aşımı verir.\n" +
+          "`🔓 .iptal @üye` → Zaman aşımını kaldırır.",
+      }
+    )
+    .setFooter({ text: "— Nizam-ı Âlem Isparta Bot Yardım Sistemi" });
+
+  message.channel.send({ embeds: [embed] });
+}
+
 // Üyelere açık komutlar
   if (komut === ".sunucu") {
     const owner = await message.guild.fetchOwner();
