@@ -95,7 +95,7 @@ client.on("messageCreate", async (message) => {
   const komut = args.shift().toLowerCase();
 
   // Yardım komutu
-  if (komut === "help") {
+if (komut === "help" || komut === "yardım") {
     const embed = new EmbedBuilder()
       .setColor("#4B0082")
       .setTitle("📘 Komut Yardım Menüsü")
