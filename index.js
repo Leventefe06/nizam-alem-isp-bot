@@ -38,7 +38,10 @@ client.on("guildMemberAdd", async (member) => {
   try {
     const rol = member.guild.roles.cache.get(kayitsizRolId);
     if (rol) await member.roles.add(rol);
-
+   // ✅ Yeni gelenin adını "☪ Kayıtsız" yap
+    await member.setNickname("☪ Kayıtsız").catch(() => {
+      console.log("❌ Takma ad ayarlanamadı. Yetki eksik olabilir.");
+    });
     const hesapOlusma = `<t:${Math.floor(member.user.createdTimestamp / 1000)}:F>`;
     const guvenilirMi = (Date.now() - member.user.createdTimestamp) > 15 * 24 * 60 * 60 * 1000
       ? "✅ Güvenilir!"
