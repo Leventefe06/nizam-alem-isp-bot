@@ -95,7 +95,7 @@ client.on("messageCreate", async (message) => {
   const komut = args.shift().toLowerCase();
 
   // Yardım komutu
-if (komut === "help" || komut === "yardım") {
+if (["help", "yardım", "nizam"].includes(komut)) {
     const embed = new EmbedBuilder()
       .setColor("#4B0082")
       .setTitle("📘 Komut Yardım Menüsü")
@@ -229,40 +229,41 @@ if (komut === "help" || komut === "yardım") {
   }
 
   // Kayıt komutları .e ve .k
-  if (komut === "e" || komut === "k") {
-    if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu"))
-      return message.reply("⛔ Bu komutu sadece Yetkili Kadrosu rolüne sahip kişiler kullanabilir.");
+if (komut === "e" || komut === "k") {
+  if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu"))
+    return message.reply("⛔ Bu komutu sadece Yetkili Kadrosu rolüne sahip kişiler kullanabilir.");
 
-    const hedef = message.mentions.members.first();
-    const isim = args[0];
-    const yas = args[1];
+  const hedef = message.mentions.members.first();
+  const isim = args[1];
+  const yas = args[2];
 
-    if (!hedef || !isim || !yas) {
-      return message.reply("Kullanım: `.e @üye isim yaş`");
-    }
-
-    const kayitsizRolId = "1382828727796498472";
-    const kayitliRolId = "1291025465577967657";
-    const beyefendiRolId = "1297646920830943292";
-    const hanimefendiRolId = "1297646174848942101";
-
-    try {
-      await hedef.roles.remove(kayitsizRolId);
-      await hedef.roles.add(kayitliRolId);
-
-      if (komut === "e") {
-        await hedef.roles.add(beyefendiRolId);
-      } else {
-        await hedef.roles.add(hanimefendiRolId);
-      }
-
-      await hedef.setNickname(`☪ ${isim} | ${yas}`);
-      return message.channel.send(`✅ ${hedef} başarıyla kayıt edildi.`);
-    } catch (e) {
-      console.error(e);
-      return message.reply("⛔ Kayıt sırasında bir hata oluştu.");
-    }
+  if (!hedef || !isim || !yas) {
+    return message.reply("Kullanım: `.e @üye isim yaş`");
   }
+
+  const kayitsizRolId = "1382828727796498472";
+  const kayitliRolId = "1291025465577967657";
+  const beyefendiRolId = "1297646920830943292";
+  const hanimefendiRolId = "1297646174848942101";
+
+  try {
+    await hedef.roles.remove(kayitsizRolId);
+    await hedef.roles.add(kayitliRolId);
+
+    if (komut === "e") {
+      await hedef.roles.add(beyefendiRolId);
+    } else {
+      await hedef.roles.add(hanimefendiRolId);
+    }
+
+    await hedef.setNickname(`☪ ${isim} | ${yas}`);
+    return message.channel.send(`✅ ${hedef} başarıyla kayıt edildi.`);
+  } catch (e) {
+    console.error(e);
+    return message.reply("⛔ Kayıt sırasında bir hata oluştu.");
+  }
+}
+
 
   // .zamanasimi
   if (komut === "zamanasimi") {
