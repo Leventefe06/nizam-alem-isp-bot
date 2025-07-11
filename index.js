@@ -1,325 +1,189 @@
 const express = require("express");
-const { Client, GatewayIntentBits, Partials, EmbedBuilder } = require("discord.js");
+const { Client, GatewayIntentBits, Partials } = require("discord.js");
 const fs = require("fs");
-const ms = require("ms");
 require("dotenv").config();
+const ms = require("ms");
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.MessageContent
   ],
   partials: [Partials.Channel],
 });
 
-// Verileri yükle
 const ayetler = JSON.parse(fs.readFileSync("./veriler/ayetler.json", "utf8"));
 const hadisler = JSON.parse(fs.readFileSync("./veriler/hadisler.json", "utf8"));
 const dualar = JSON.parse(fs.readFileSync("./veriler/dualar.json", "utf8"));
+const kayıtlarPath = "./veriler/kayitlar.json";
+let kayıtlar = fs.existsSync(kayıtlarPath) ? JSON.parse(fs.readFileSync(kayıtlarPath, "utf8")) : {};
 
-// Bot hazır olduğunda
 client.once("ready", () => {
   console.log(`🕌 Bot aktif: ${client.user.tag}`);
   client.user.setPresence({
     status: "dnd",
-    activities: [{ name: "Nizam-ı Âlem Isparta", type: "PLAYING" }],
+    activities: [{ name: "Nizam-ı Âlem Isparta", type: 0 }]
   });
 });
 
-// Yeni üye sunucuya katıldığında
 client.on("guildMemberAdd", async (member) => {
   const kayitsizRolId = "1382828727796498472";
   const kayitKanalId = "1297643650703954000";
-  const yetkiliRolId = "1382828579171340390";
+  const genelSohbetId = "1390347483921780828";
 
   try {
-    const rol = member.guild.roles.cache.get(kayitsizRolId);
-    if (rol) await member.roles.add(rol);
-   // ✅ Yeni gelenin adını "☪ Kayıtsız" yap
-    await member.setNickname("☪ Kayıtsız").catch(() => {
-      console.log("❌ Takma ad ayarlanamadı. Yetki eksik olabilir.");
-    });
-    const hesapOlusma = `<t:${Math.floor(member.user.createdTimestamp / 1000)}:F>`;
-    const guvenilirMi = (Date.now() - member.user.createdTimestamp) > 15 * 24 * 60 * 60 * 1000
-      ? "✅ Güvenilir!"
-      : "⚠️ Yeni Hesap";
-
-    const embed = new EmbedBuilder()
-      .setColor(0x2b2d31)
-      .setDescription(`
-<@&${yetkiliRolId}>, ${member} sunucuya giriş yaptı.
-
-🇹🇷 **Yeni Bir Kullanıcı Katıldı!**  
-🐾 Sunucumuza hoş geldin ${member}!
-
-📊 **Seninle birlikte ${member.guild.memberCount} kişiyiz.**
-
-🗓️ **Hesap oluşturma tarihi:** ${hesapOlusma}  
-🔐 **Güvenilirlik durumu:** ${guvenilirMi}
-      `)
-      .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-      .setFooter({ text: "Nizam-ı Âlem Isparta" });
-
-    const kanal = member.guild.channels.cache.get(kayitKanalId);
-    if (kanal && kanal.isTextBased()) {
-      kanal.send({ embeds: [embed] });
-    }
-
-    // DM gönder
-    try {
-      await member.send(`🌙 Selamün Aleyküm kardeşim,
+    await member.roles.add(kayitsizRolId);
+    await member.send(`🌙 Selamün Aleyküm kardeşim,
 
 Nizam-ı Âlem Isparta sunucusuna hoş geldin!
 
-Kayıt olmak için lütfen sunucudaki 「📝」・ısparta・hoşgeldi̇ni̇z kanalı’na ismini ve yaşını yaz. 
+Kayıt olmak için lütfen sunucudaki 「📝」・ısparta・hoşgeldi̇ni̇z kanalı’na ismini ve yaşını yaz.
 
 Allah (c.c) senden razı olsun. 🤍`);
-    } catch {
-      console.log("❌ DM gönderilemedi. Kullanıcının DM’leri kapalı olabilir.");
+
+    const kanal = member.guild.channels.cache.get(kayitKanalId);
+    if (kanal?.isTextBased()) {
+      kanal.send(`👋 ${member} aramıza katıldı. Lütfen ismini ve yaşını yaz. <@&1382828579171340390>`);
     }
 
-    console.log(`✅ ${member.user.tag} kayıtsız rolü verildi ve embed mesajı gönderildi.`);
-  } catch (error) {
-    console.error("❌ Yeni gelen üyeye işlem yapılırken hata oluştu:", error);
+    const sohbet = member.guild.channels.cache.get(genelSohbetId);
+    if (sohbet?.isTextBased()) {
+      sohbet.send(`👋 ${member} sunucumuza katıldı. Hoş geldin!`);
+    }
+  } catch (err) {
+    console.error("❌ Kayıt işlemi sırasında hata:", err);
   }
 });
 
-// Komutlar
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
+  const args = message.content.trim().split(/ +/);
+  const komut = args[0].toLowerCase();
 
-  const prefix = ".";
-  if (!message.content.startsWith(prefix)) return;
+  // Yardım
+  if (komut === ".help" || komut === ".yardım") {
+message.channel.send(`🛠️ **Komutlar:**
 
-  const args = message.content.slice(prefix.length).trim().split(/ +/);
-  const komut = args.shift().toLowerCase();
+🌙 \`.ayet\`, \`.hadis\`, \`.dua\`
+🔔 \`.ping\`, \`.istatistik\`, \`.sunucu\`
+👤 \`.e @üye isim yaş\`, \`.k @üye isim yaş\`
+⏳ \`.zamanasimi @üye 10m Sebep\`, \`.iptal @üye\`
+🔨 \`.ban @üye Sebep\`, \`.at @üye Sebep\`
+📈 \`.kayıtsayı @üye\`
 
-  // Yardım komutu
-if (["help", "yardım", "nizam"].includes(komut)) {
-    const embed = new EmbedBuilder()
-      .setColor("#4B0082")
-      .setTitle("📘 Komut Yardım Menüsü")
-      .setDescription("Aşağıda bot komutlarını kategorilere ayrılmış şekilde bulabilirsin.")
-      .addFields(
-        {
-          name: "👤 Üye Komutları",
-          value:
-            "`📖 .ayet` → Rastgele bir ayet gönderir.\n" +
-            "`🕋 .hadis` → Rastgele bir hadis gönderir.\n" +
-            "`🤲 .dua` → Rastgele bir dua gönderir.\n" +
-            "`👑 .sunucu` → Sunucu sahibini gösterir.\n" +
-            "`📅 .katıldım` → Ne zaman katıldığını gösterir.\n" +
-            "`🧾 .profilim` → Hesap bilgilerini gösterir.\n" +
-            "`📊 .istatistik` → Bot istatistiklerini gösterir.\n" +
-            "`🏓 .ping` → Botun gecikmesini gösterir.\n" +
-            "`📌 .kurallar` → Kurallar kanalını gösterir.",
-        },
-        {
-          name: "🛠️ Yetkili Komutları",
-          value:
-            "`✅ .e @üye İsim Yaş` → Erkek kullanıcıyı kayıt eder.\n" +
-            "`✅ .k @üye İsim Yaş` → Kadın kullanıcıyı kayıt eder.\n" +
-            "`⏰ .zamanasimi @üye 10m Sebep` → Zaman aşımı verir.\n" +
-            "`🔓 .iptal @üye` → Zaman aşımını kaldırır.",
-        }
-      )
-      .setFooter({ text: "— Nizam-ı Âlem Isparta Bot Yardım Sistemi" });
+— *Nizam-ı Âlem Isparta Yönetimi*`);
 
-    return message.channel.send({ embeds: [embed] });
   }
 
-  // .ping
-  if (komut === "ping") {
-    if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu"))
-      return message.reply("⛔ Bu komutu sadece 'Yetkili Kadrosu' kullanabilir.");
+  // Kayıt komutları
+  if (komut === ".e" || komut === ".k") {
+    if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu")) return;
 
-    const gecikme = Date.now() - message.createdTimestamp;
-    return message.channel.send(`🏓 Pong! Gecikme: ${gecikme}ms`);
-  }
+    const hedef = message.mentions.members.first();
+    const isim = args[2];
+    const yas = args[3];
+    if (!hedef || !isim || !yas) return;
 
-  // .istatistik
-  if (komut === "istatistik") {
-    const toplamUyeler = message.guild.memberCount;
-    const kanalSayisi = message.guild.channels.cache.size;
-    const uptimeSaat = Math.floor(process.uptime() / 3600);
-    const bellekMB = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
+    const kayitsizRolId = "1382828727796498472";
+    const kayitliRolId = "1291025465577967657";
+    const beyefendiRolId = "1297646920830943292";
+    const hanimefendiRolId = "1297646174848942101";
 
-    return message.channel.send(
-      `📊 **Bot İstatistikleri:**\n` +
-      `• 👥 Üye Sayısı: ${toplamUyeler}\n` +
-      `• 📂 Kanal Sayısı: ${kanalSayisi}\n` +
-      `• 🕒 Çalışma Süresi: ${uptimeSaat} saat\n` +
-      `• 💾 Bellek Kullanımı: ${bellekMB} MB\n` +
-      `• 🤖 Bot: ${client.user.tag}`
-    );
-  }
-
-  // .profilim
-  if (komut === "profilim") {
-    if (!message.guild) return message.reply("Bu komut sadece sunucularda kullanılabilir.");
-
-    const user = message.author;
-    const hesapTarihi = `<t:${Math.floor(user.createdTimestamp / 1000)}:F>`;
-    const uye = message.member;
-    const katilmaTarihi = uye.joinedTimestamp
-      ? `<t:${Math.floor(uye.joinedTimestamp / 1000)}:F>`
-      : "Bilgi yok";
-
-    const embed = new EmbedBuilder()
-      .setColor("#4B0082")
-      .setTitle(`${user.tag} - Profil Bilgileri`)
-      .addFields(
-        { name: "Kullanıcı ID", value: user.id, inline: true },
-        { name: "Hesap Oluşturulma", value: hesapTarihi, inline: true },
-        { name: "Sunucuya Katılım", value: katilmaTarihi, inline: true }
-      )
-      .setThumbnail(user.displayAvatarURL({ dynamic: true }))
-      .setFooter({ text: "Nizam-ı Âlem Isparta" });
-
-    return message.channel.send({ embeds: [embed] });
-  }
-
-  // .sunucu
-  if (komut === "sunucu") {
-    try {
-      const owner = await message.guild.fetchOwner();
-      const kurulus = `<t:${Math.floor(message.guild.createdTimestamp / 1000)}:F>`;
-
-      return message.channel.send(
-        `🏰 **Sunucu Bilgisi**\n` +
-        `• Ad: ${message.guild.name}\n` +
-        `• Sahip: ${owner.user.tag}\n` +
-        `• Üye Sayısı: ${message.guild.memberCount}\n` +
-        `• Kuruluş Tarihi: ${kurulus}`
-      );
-    } catch (e) {
-      console.error(e);
-      return message.channel.send("❌ Sunucu bilgisi alınırken hata oluştu.");
-    }
-  }
-
-  // .katıldım
-  if (komut === "katıldım") {
-    if (!message.guild) return message.reply("Bu komut sadece sunucularda kullanılabilir.");
-
-    const uye = message.member;
-    const katilmaTarihi = uye.joinedTimestamp
-      ? `<t:${Math.floor(uye.joinedTimestamp / 1000)}:F>`
-      : "Sunucuya katılım tarihi bilgisi bulunamadı.";
-
-    return message.channel.send(`📅 **Sunucuya katılım tarihin:** ${katilmaTarihi}`);
-  }
-
-  // .ayet
-  if (komut === "ayet") {
-    const rastgele = ayetler[Math.floor(Math.random() * ayetler.length)];
-    return message.channel.send(`📖 **Ayet:** ${rastgele}`);
-  }
-
-  // .hadis
-  if (komut === "hadis") {
-    const rastgele = hadisler[Math.floor(Math.random() * hadisler.length)];
-    return message.channel.send(`🕋 **Hadis:** ${rastgele}`);
-  }
-
-  // .dua
-  if (komut === "dua") {
-    const rastgele = dualar[Math.floor(Math.random() * dualar.length)];
-    return message.channel.send(`🤲 **Dua:** ${rastgele}`);
-  }
-
-  // Kayıt komutları .e ve .k
-if (komut === "e" || komut === "k") {
-  if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu"))
-    return message.reply("⛔ Bu komutu sadece Yetkili Kadrosu rolüne sahip kişiler kullanabilir.");
-
-  const hedef = message.mentions.members.first();
-  const isim = args[1];
-  const yas = args[2];
-
-  if (!hedef || !isim || !yas) {
-    return message.reply("Kullanım: `.e @üye isim yaş`");
-  }
-
-  const kayitsizRolId = "1382828727796498472";
-  const kayitliRolId = "1291025465577967657";
-  const beyefendiRolId = "1297646920830943292";
-  const hanimefendiRolId = "1297646174848942101";
-
-  try {
     await hedef.roles.remove(kayitsizRolId);
     await hedef.roles.add(kayitliRolId);
-
-    if (komut === "e") {
-      await hedef.roles.add(beyefendiRolId);
-    } else {
-      await hedef.roles.add(hanimefendiRolId);
-    }
-
+    if (komut === ".e") await hedef.roles.add(beyefendiRolId);
+    else await hedef.roles.add(hanimefendiRolId);
     await hedef.setNickname(`☪ ${isim} | ${yas}`);
-    return message.channel.send(`✅ ${hedef} başarıyla kayıt edildi.`);
-  } catch (e) {
-    console.error(e);
-    return message.reply("⛔ Kayıt sırasında bir hata oluştu.");
+
+    kayıtlar[hedef.id] = (kayıtlar[hedef.id] || 0) + 1;
+    fs.writeFileSync(kayıtlarPath, JSON.stringify(kayıtlar));
+
+    message.channel.send(`✅ ${hedef} başarıyla kayıt edildi.`);
   }
-}
 
+  if (komut === ".kayıtsayı") {
+    const hedef = message.mentions.users.first() || message.author;
+    const sayi = kayıtlar[hedef.id] || 0;
+    message.channel.send(`📊 ${hedef.username} toplam ${sayi} kayıt yapmış.`);
+  }
 
-  // .zamanasimi
-  if (komut === "zamanasimi") {
-    if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu"))
-      return message.reply("⛔ Bu komutu sadece Yetkili Kadrosu kullanabilir.");
-
+  // Zaman aşımı
+  if (komut === ".zamanasimi") {
+    if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu")) return;
     const hedef = message.mentions.members.first();
-    const sure = args[0];
-    const sebep = args.slice(1).join(" ") || "Sebep belirtilmedi.";
-
-    if (!hedef || !sure) {
-      return message.reply("Kullanım: `.zamanasimi @üye 10m Sebep` (saniye: s, dakika: m, saat: h, gün: d)");
-    }
-
+    const sure = args[2];
+    const sebep = args.slice(3).join(" ") || "Sebep belirtilmedi";
     const msSure = ms(sure);
-    if (!msSure || isNaN(msSure) || msSure < 5000 || msSure > 28 * 24 * 60 * 60 * 1000) {
-      return message.reply("⛔ Süre geçersiz. En az 5 saniye, en fazla 28 gün olabilir.");
-    }
+    if (!hedef || !sure || !msSure) return;
 
-    try {
-      await hedef.timeout(msSure, sebep);
-      return message.reply(`✅ ${hedef.user.tag} ${sure} süreyle zaman aşımına alındı. Sebep: ${sebep}`);
-    } catch (e) {
-      console.error(e);
-      return message.reply("⛔ Yetkim yetersiz olabilir, işlem başarısız.");
-    }
+    await hedef.timeout(msSure, sebep);
+    message.channel.send(`⏳ ${hedef.user.tag} ${sure} zaman aşımına alındı. Sebep: ${sebep}`);
   }
 
-  // .iptal
-  if (komut === "iptal") {
-    if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu"))
-      return message.reply("⛔ Bu komutu sadece Yetkili Kadrosu kullanabilir.");
+  if (komut === ".iptal") {
+    if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu")) return;
+    const hedef = message.mentions.members.first();
+    if (!hedef) return;
+    await hedef.timeout(null);
+    message.channel.send(`✅ ${hedef.user.tag} için zaman aşımı kaldırıldı.`);
+  }
+
+  // Sunucu komutları
+  if (komut === ".sunucu") {
+    const owner = await message.guild.fetchOwner();
+    message.channel.send(`👑 Sunucu Sahibi: ${owner.user.tag}`);
+  }
+
+  if (komut === ".ping") {
+    message.channel.send(`🏓 Ping: ${client.ws.ping}ms`);
+  }
+
+  if (komut === ".istatistik") {
+    message.channel.send(`📊 Toplam Üye: ${message.guild.memberCount}`);
+  }
+
+  if (komut === ".ayet") {
+    const rastgele = ayetler[Math.floor(Math.random() * ayetler.length)];
+    message.channel.send(`📖 **Ayet:** ${rastgele}`);
+  }
+  if (komut === ".hadis") {
+    const rastgele = hadisler[Math.floor(Math.random() * hadisler.length)];
+    message.channel.send(`🕋 **Hadis:** ${rastgele}`);
+  }
+  if (komut === ".dua") {
+    const rastgele = dualar[Math.floor(Math.random() * dualar.length)];
+    message.channel.send(`🤲 **Dua:** ${rastgele}`);
+  }
+
+  // Ban ve At komutu
+  if (komut === ".ban" || komut === ".at") {
+    const rollereYetkili = ["🥇", "🥈", "🥉"];
+    const yetkili = message.member.roles.cache.some(role => rollereYetkili.includes(role.name));
+    if (!yetkili) return;
 
     const hedef = message.mentions.members.first();
-    if (!hedef) {
-      return message.reply("Kullanım: `.iptal @üye`");
-    }
+    const sebep = args.slice(2).join(" ") || "Sebep belirtilmedi";
+    if (!hedef) return;
 
     try {
-      await hedef.timeout(null);
-      return message.reply(`✅ ${hedef.user.tag} zaman aşımı kaldırıldı.`);
-    } catch (e) {
-      console.error(e);
-      return message.reply("⛔ İşlem başarısız. Yetkin yetersiz olabilir.");
+      if (komut === ".ban") {
+        await hedef.ban({ reason: sebep });
+        message.channel.send(`⛔ ${hedef.user.tag} banlandı. Sebep: ${sebep}`);
+      } else {
+        await hedef.kick(sebep);
+        message.channel.send(`🚪 ${hedef.user.tag} atıldı. Sebep: ${sebep}`);
+      }
+    } catch (err) {
+      console.error(err);
+      message.reply("İşlem başarısız. Yetkim yetersiz olabilir.");
     }
   }
 });
 
-// Keep-alive için Express
 const app = express();
 app.get("/", (req, res) => res.send("Bot çalışıyor! 🕌"));
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🌐 Keep-alive portu: ${PORT}`));
-
-// Bot login
 client.login(process.env.TOKEN);
