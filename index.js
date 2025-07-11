@@ -29,33 +29,61 @@ client.once("ready", () => {
 });
 
 client.on("guildMemberAdd", async (member) => {
-  const kayitsizRolId = "1382828727796498472";
-  const kayitKanalId = "1297643650703954000";
-  const genelSohbetId = "1390347483921780828";
+  const kayitsizRolId = "1382828727796498472"; // Kayıtsız rol
+  const kayitKanalId = "1297643650703954000";  // Kayıt kanalı
+  const sohbetKanalId = "1390347483921780828"; // Genel sohbet kanalı
 
   try {
     await member.roles.add(kayitsizRolId);
-    await member.send(`🌙 Selamün Aleyküm kardeşim,
+
+    // DM Mesajı
+    try {
+      await member.send(`🌙 Selamün Aleyküm kardeşim,
 
 Nizam-ı Âlem Isparta sunucusuna hoş geldin!
 
 Kayıt olmak için lütfen sunucudaki 「📝」・ısparta・hoşgeldi̇ni̇z kanalı’na ismini ve yaşını yaz.
 
 Allah (c.c) senden razı olsun. 🤍`);
+    } catch {
+      console.log("❌ DM gönderilemedi.");
+    }
 
+    // Hoş geldin mesajı → Kayıt kanalına
     const kanal = member.guild.channels.cache.get(kayitKanalId);
-    if (kanal?.isTextBased()) {
-      kanal.send(`👋 ${member} aramıza katıldı. Lütfen ismini ve yaşını yaz. <@&1382828579171340390>`);
+    const yetkiliRol = "<@&1382828579171340390>";
+    const toplamUye = member.guild.memberCount;
+
+    const olusturmaTarihi = `<t:${Math.floor(member.user.createdTimestamp / 1000)}:F>`;
+    const suankiZaman = Date.now();
+    const fark = suankiZaman - member.user.createdTimestamp;
+    const yeniMi = fark < 1000 * 60 * 60 * 24 * 7; // 7 günden küçükse yeni hesap
+
+    if (kanal && kanal.isTextBased()) {
+      kanal.send({
+        content: `${yetkiliRol}, ${member} sunucuya giriş yaptı.`,
+        embeds: [{
+          color: 0x5865F2,
+          title: "🇹🇷 Yeni Bir Kullanıcı Katıldı!",
+          description:
+`🐾 Sunucumuza hoş geldin ${member}!
+
+📊 Seninle birlikte **${toplamUye}** kişiyiz.
+
+🗓️ Hesap oluşturma tarihi: ${olusturmaTarihi}
+🔐 Güvenilirlik durumu: ${yeniMi ? "⚠️ Yeni Hesap" : "✅ Güvenilir Hesap"}
+
+Nizam-ı Âlem Isparta`,
+        }]
+      });
     }
 
-    const sohbet = member.guild.channels.cache.get(genelSohbetId);
-    if (sohbet?.isTextBased()) {
-      sohbet.send(`👋 ${member} sunucumuza katıldı. Hoş geldin!`);
-    }
+    console.log(`✅ ${member.user.tag} kayıtsız olarak eklendi.`);
   } catch (err) {
-    console.error("❌ Kayıt işlemi sırasında hata:", err);
+    console.error("❌ Yeni gelen üyeye işlem yapılamadı:", err);
   }
 });
+
 
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
@@ -101,6 +129,12 @@ message.channel.send(`🛠️ **Komutlar:**
     fs.writeFileSync(kayıtlarPath, JSON.stringify(kayıtlar));
 
     message.channel.send(`✅ ${hedef} başarıyla kayıt edildi.`);
+    // Kayıt sonrası genel sohbete hoş geldin mesajı
+const sohbetKanalId = "1390347483921780828";
+const sohbetKanal = message.guild.channels.cache.get(sohbetKanalId);
+if (sohbetKanal && sohbetKanal.isTextBased()) {
+  sohbetKanal.send(`🌟 Aramıza katıldığın için teşekkürler ${hedef}! Hayırlı, huzurlu ve seviyeli bir ortam dileriz.`);
+}
   }
 
   if (komut === ".kayıtsayı") {
