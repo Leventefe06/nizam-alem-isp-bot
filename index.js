@@ -29,14 +29,13 @@ client.once("ready", () => {
 });
 
 client.on("guildMemberAdd", async (member) => {
-  const kayitsizRolId = "1382828727796498472"; // Kayıtsız rol
-  const kayitKanalId = "1297643650703954000";  // Kayıt kanalı
-  const sohbetKanalId = "1390347483921780828"; // Genel sohbet kanalı
+  const kayitsizRolId = "1382828727796498472";
+  const kayitKanalId = "1297643650703954000";
+  const sohbetKanalId = "1390347483921780828";
 
   try {
     await member.roles.add(kayitsizRolId);
 
-    // DM Mesajı
     try {
       await member.send(`🌙 Selamün Aleyküm kardeşim,
 
@@ -49,7 +48,6 @@ Allah (c.c) senden razı olsun. 🤍`);
       console.log("❌ DM gönderilemedi.");
     }
 
-    // Hoş geldin mesajı → Kayıt kanalına
     const kanal = member.guild.channels.cache.get(kayitKanalId);
     const yetkiliRol = "<@&1382828579171340390>";
     const toplamUye = member.guild.memberCount;
@@ -57,7 +55,7 @@ Allah (c.c) senden razı olsun. 🤍`);
     const olusturmaTarihi = `<t:${Math.floor(member.user.createdTimestamp / 1000)}:F>`;
     const suankiZaman = Date.now();
     const fark = suankiZaman - member.user.createdTimestamp;
-    const yeniMi = fark < 1000 * 60 * 60 * 24 * 7; // 7 günden küçükse yeni hesap
+    const yeniMi = fark < 1000 * 60 * 60 * 24 * 7;
 
     if (kanal && kanal.isTextBased()) {
       kanal.send({
@@ -84,15 +82,13 @@ Nizam-ı Âlem Isparta`,
   }
 });
 
-
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   const args = message.content.trim().split(/ +/);
   const komut = args[0].toLowerCase();
 
-  // Yardım
   if (komut === ".help" || komut === ".yardım") {
-message.channel.send(`🛠️ **Komutlar:**
+    message.channel.send(`🛠️ **Komutlar:**
 
 🌙 \`.ayet\`, \`.hadis\`, \`.dua\`
 🔔 \`.ping\`, \`.istatistik\`, \`.sunucu\`
@@ -102,10 +98,8 @@ message.channel.send(`🛠️ **Komutlar:**
 📈 \`.kayıtsayı @üye\`
 
 — *Nizam-ı Âlem Isparta Yönetimi*`);
-
   }
 
-  // Kayıt komutları
   if (komut === ".e" || komut === ".k") {
     if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu")) return;
 
@@ -129,12 +123,11 @@ message.channel.send(`🛠️ **Komutlar:**
     fs.writeFileSync(kayıtlarPath, JSON.stringify(kayıtlar));
 
     message.channel.send(`✅ ${hedef} başarıyla kayıt edildi.`);
-    // Kayıt sonrası genel sohbete hoş geldin mesajı
-const sohbetKanalId = "1390347483921780828";
-const sohbetKanal = message.guild.channels.cache.get(sohbetKanalId);
-if (sohbetKanal && sohbetKanal.isTextBased()) {
-  sohbetKanal.send(`🌟 Aramıza katıldığın için teşekkürler ${hedef}! Hayırlı, huzurlu ve seviyeli bir ortam dileriz.`);
-}
+
+    const sohbetKanal = message.guild.channels.cache.get("1390347483921780828");
+    if (sohbetKanal && sohbetKanal.isTextBased()) {
+      sohbetKanal.send(`🌟 Aramıza katıldığın için teşekkürler ${hedef}! Hayırlı, huzurlu ve seviyeli bir ortam dileriz.`);
+    }
   }
 
   if (komut === ".kayıtsayı") {
@@ -143,7 +136,6 @@ if (sohbetKanal && sohbetKanal.isTextBased()) {
     message.channel.send(`📊 ${hedef.username} toplam ${sayi} kayıt yapmış.`);
   }
 
-  // Zaman aşımı
   if (komut === ".zamanasimi") {
     if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu")) return;
     const hedef = message.mentions.members.first();
@@ -151,7 +143,6 @@ if (sohbetKanal && sohbetKanal.isTextBased()) {
     const sebep = args.slice(3).join(" ") || "Sebep belirtilmedi";
     const msSure = ms(sure);
     if (!hedef || !sure || !msSure) return;
-
     await hedef.timeout(msSure, sebep);
     message.channel.send(`⏳ ${hedef.user.tag} ${sure} zaman aşımına alındı. Sebep: ${sebep}`);
   }
@@ -164,7 +155,6 @@ if (sohbetKanal && sohbetKanal.isTextBased()) {
     message.channel.send(`✅ ${hedef.user.tag} için zaman aşımı kaldırıldı.`);
   }
 
-  // Sunucu komutları
   if (komut === ".sunucu") {
     const owner = await message.guild.fetchOwner();
     message.channel.send(`👑 Sunucu Sahibi: ${owner.user.tag}`);
@@ -191,10 +181,14 @@ if (sohbetKanal && sohbetKanal.isTextBased()) {
     message.channel.send(`🤲 **Dua:** ${rastgele}`);
   }
 
-  // Ban ve At komutu
   if (komut === ".ban" || komut === ".at") {
-    const rollereYetkili = ["🥇", "🥈", "🥉"];
-    const yetkili = message.member.roles.cache.some(role => rollereYetkili.includes(role.name));
+    const yetkiliRolIdler = [
+      "1382828368248045639", // 🥇
+      "1382828330721742888", // 🥈
+      "1382828306059100160", // 🥉
+      "1382828276455706645"  // Yeni yetkili
+    ];
+    const yetkili = message.member.roles.cache.some(role => yetkiliRolIdler.includes(role.id));
     if (!yetkili) return;
 
     const hedef = message.mentions.members.first();
@@ -207,7 +201,7 @@ if (sohbetKanal && sohbetKanal.isTextBased()) {
         message.channel.send(`⛔ ${hedef.user.tag} banlandı. Sebep: ${sebep}`);
       } else {
         await hedef.kick(sebep);
-        message.channel.send(`🚪 ${hedef.user.tag} atıldı. Sebep: ${sebep}`);
+        message.channel.send(`🚪 ${hedef.user.tag} sunucudan atıldı. Sebep: ${sebep}`);
       }
     } catch (err) {
       console.error(err);
