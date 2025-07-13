@@ -121,8 +121,9 @@ client.on("messageCreate", async (message) => {
   if (komut === ".e" || komut === ".k") {
     if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu")) return;
     const hedef = message.mentions.members.first();
-    const isim  = args[2]; const yas = args[3];
-    if (!hedef || !isim || !yas) return message.reply("Kullanım: `.e @üye isim yaş`");
+    const isim  = args[2]; 
+    const yas = args[3];
+    if (!hedef || !isim || !yas || isNaN(yas)) return message.reply("Kullanım: `.e @üye isim yaş` (Yaş sayı olmalı)");
 
     try {
       await hedef.roles.remove(ROL.kayitsiz);
@@ -131,32 +132,71 @@ client.on("messageCreate", async (message) => {
       await hedef.setNickname(`☪ ${isim} | ${yas}`);
 
       // Kayıt sayacı
-      const kaydedenId = message.author.id;
-      kayıtlar[kaydedenId] = (kayıtlar[kaydedenId] || 0) + 1;
+      const kayıtEden = message.member;
+      kayıtlar[kayıtEden.id] = (kayıtlar[kayıtEden.id] || 0) + 1;
       fs.writeFileSync(kayıtlarPath, JSON.stringify(kayıtlar, null, 2));
 
-      // Bilgilendirici embed
-      const embed = new EmbedBuilder()
-        .setColor(komut === ".e" ? 0x3498db : 0xe91e63)
-        .setTitle("✅ Kayıt Yapıldı!")
-        .setDescription("Kayıt bilgileri aşağıdadır.")
-        .addFields(
-          { name:"• Kayıt Edilen Kullanıcı", value:`${hedef}`, inline:false },
-          { name:"• Kayıt Eden Kullanıcı",   value:`${message.author}`, inline:false },
-          { name:"• Verilen Roller",         value:`<@&${ROL.kayitli}> ${komut==='.e' ? `<@&${ROL.erkek}>` : `<@&${ROL.kiz}>`}`, inline:false },
-          { name:"• Yeni İsim",              value:`☪ ${isim} | ${yas}`, inline:false },
-          { name:"• Kayıt Türü",             value: komut === ".e" ? "erkek" : "kiz", inline:true },
-          { name:"• ${message.author.username} kayıt sayın", value:`${kayıtlar[kaydedenId]}`, inline:true }
-        )
-        .setThumbnail(hedef.user.displayAvatarURL({ dynamic:true }));
+      const kayıtTürü = komut === ".e" ? "erkek" : "kız";
+      const kayıtSayısı = kayıtlar[kayıtEden.id] || 0;
 
-      message.channel.send({ embeds:[embed] });
+      // Embed mesajı obje olarak tanımla
+      const kayıtEmbed = {
+        color: 0x2ECC71,
+        author: {
+          name: "✅ Kayıt Yapıldı!",
+          icon_url: "https://i.imgur.com/62xkxdC.png"
+        },
+        description: "Kayıt bilgileri aşağıdadır.",
+        fields: [
+          {
+            name: "• Kayıt Edilen Kullanıcı",
+            value: `${hedef}`,
+            inline: false
+          },
+          {
+            name: "• Kayıt Eden Kullanıcı",
+            value: `${kayıtEden}`,
+            inline: false
+          },
+          {
+            name: "• Verilen Roller",
+            value: `<@&${ROL.kayitli}> ${kayıtTürü === "erkek" ? `<@&${ROL.erkek}>` : `<@&${ROL.kiz}>`}`,
+            inline: false
+          },
+          {
+            name: "• Yeni İsim",
+            value: `☪ ${isim} | ${yas}`,
+            inline: false
+          },
+          {
+            name: "• Kayıt Türü",
+            value: `${kayıtTürü}`,
+            inline: true
+          },
+          {
+            name: `• ${kayıtEden.user.username} kayıt sayın`,
+            value: `${kayıtSayısı}`,
+            inline: true
+          }
+        ],
+        thumbnail: {
+          url: hedef.user.displayAvatarURL({ dynamic: true })
+        },
+        footer: {
+          text: "Nizam-ı Âlem Isparta"
+        }
+      };
+
+      message.channel.send({ embeds: [kayıtEmbed] });
 
       // Sohbet kanalına duyuru
       const sohbet = message.guild.channels.cache.get(KANAL.sohbet);
       sohbet?.isTextBased() && sohbet.send(`🌟 Aramıza katıldığın için teşekkürler ${hedef}! Hayırlı, huzurlu ve seviyeli bir ortam dileriz.`);
 
-    } catch(err) { console.error(err); message.reply("Kayıt sırasında hata oluştu."); }
+    } catch(err) { 
+      console.error(err); 
+      message.reply("Kayıt sırasında hata oluştu."); 
+    }
   }
 
   if (komut === ".kayıtsayı") {
@@ -169,7 +209,8 @@ client.on("messageCreate", async (message) => {
   if (komut === ".zamanasimi") {
     if (!message.member.roles.cache.some(r => r.name === "Yetkili Kadrosu")) return;
     const hedef = message.mentions.members.first();
-    const süre  = args[2]; const sebep = args.slice(3).join(" ") || "Sebep belirtilmedi";
+    const süre  = args[2]; 
+    const sebep = args.slice(3).join(" ") || "Sebep belirtilmedi";
     const msSüre = ms(süre);
     if (!hedef || !msSüre) return message.reply("Kullanım: `.zamanasimi @üye 10m Sebep`");
     await hedef.timeout(msSüre, sebep);
@@ -192,9 +233,18 @@ client.on("messageCreate", async (message) => {
     const sebep = args.slice(2).join(" ") || "Sebep belirtilmedi";
     if (!hedef) return;
     try {
-      if (komut === ".ban") { await hedef.ban({ reason: sebep }); message.channel.send(`⛔ ${hedef.user.tag} banlandı. Sebep: ${sebep}`); }
-      else { await hedef.kick(sebep); message.channel.send(`🚪 ${hedef.user.tag} atıldı. Sebep: ${sebep}`); }
-    } catch(err){ console.error(err); message.reply("İşlem başarısız."); }
+      if (komut === ".ban") { 
+        await hedef.ban({ reason: sebep }); 
+        message.channel.send(`⛔ ${hedef.user.tag} banlandı. Sebep: ${sebep}`); 
+      }
+      else { 
+        await hedef.kick(sebep); 
+        message.channel.send(`🚪 ${hedef.user.tag} atıldı. Sebep: ${sebep}`); 
+      }
+    } catch(err){ 
+      console.error(err); 
+      message.reply("İşlem başarısız."); 
+    }
   }
 });
 
