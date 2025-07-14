@@ -3,12 +3,6 @@ const { Client, GatewayIntentBits, Partials, EmbedBuilder } = require("discord.j
 const fs = require("fs");
 require("dotenv").config();
 const ms = require("ms");
-const OpenAI = require("openai");
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -121,35 +115,6 @@ client.on("messageCreate", async (message) => {
   if (komut === ".ayet")  return message.channel.send(`📖 **Ayet:** ${ayetler[Math.floor(Math.random()*ayetler.length)]}`);
   if (komut === ".hadis") return message.channel.send(`🕋 **Hadis:** ${hadisler[Math.floor(Math.random()*hadisler.length)]}`);
   if (komut === ".dua")   return message.channel.send(`🤲 **Dua:** ${dualar[Math.floor(Math.random()*dualar.length)]}`);
-  // ───── Yapay Zekâ: Yunus Emre sohbeti
-  if (komut === ".yunusemre") {
-    const soru = args.slice(1).join(" ");
-    if (!soru) return message.reply("🕊️ Lütfen Yunus Emre'ye soracak bir şey yaz.");
-
-    try {
-      const yanit = await openai.createChatCompletion({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "Sen Yunus Emre'sin. Bilgece, şiirsel, tasavvufi, Allah aşkı ile dolu konuş. Dinin güzelliğini anlat. Kardeşim diye hitap et."
-          },
-          {
-            role: "user",
-            content: soru
-          }
-        ],
-        temperature: 0.8,
-        max_tokens: 300
-      });
-
-      const cevap = yanit.data.choices[0].message.content;
-      message.channel.send(`🕊️ **Yunus Emre:** ${cevap}`);
-    } catch (err) {
-      console.error(err);
-      message.reply("❌ Şu an yanıt veremiyorum. Daha sonra tekrar dene.");
-    }
-  }
 
   // Kayıt komutları
   if (komut === ".e" || komut === ".k") {
