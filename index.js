@@ -3,12 +3,11 @@ const { Client, GatewayIntentBits, Partials, EmbedBuilder } = require("discord.j
 const fs = require("fs");
 require("dotenv").config();
 const ms = require("ms");
-const { Configuration, OpenAIApi } = require("openai");
+const OpenAI = require("openai");
 
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
 const client = new Client({
   intents: [
